@@ -360,6 +360,16 @@ func (g *Governor) share(ctx context.Context, host, key string, fn func() (any, 
 			delete(g.flights, k)
 		}
 	}
+	if len(g.flights) > maxCachedFlights {
+		for k, o := range g.flights {
+			if o != f && !o.exp.IsZero() {
+				delete(g.flights, k)
+				if len(g.flights) <= maxCachedFlights {
+					break
+				}
+			}
+		}
+	}
 	g.mu.Unlock()
 	v, ttl, err := fn()
 	f.val, f.err = v, err
@@ -447,6 +457,11 @@ func (d dynamicTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 const maxSharedBody = 2 << 20 // a larger response is neither coalesced nor cached
+
+// maxCachedFlights is the largest number of coalesced/cached GET entries kept
+// in Governor.flights. Expired entries are swept on insert; cached ones above
+// this cap are dropped so a crawl of distinct URLs cannot pin hundreds of MiB.
+const maxCachedFlights = 64
 
 func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if ua := t.g.p.UserAgent; ua != "" && req.Header.Get("User-Agent") == "" {

@@ -2,6 +2,7 @@ package egress
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -199,6 +200,22 @@ func TestDedupeAndCache(t *testing.T) {
 	}
 	if s.hits.Load() != 14 {
 		t.Fatalf("namespaces: hits %d, want 14 (one per namespace, then a cache hit)", s.hits.Load())
+	}
+}
+
+func TestCacheCapsFlightMap(t *testing.T) {
+	p := open
+	p.CacheTTL = time.Minute
+	g := New(p)
+	s := newServer(t, 0, nil)
+	for i := 0; i < maxCachedFlights+16; i++ {
+		do(t, g, task("t1"), "GET", s.URL+"/"+fmt.Sprint(i))
+	}
+	g.mu.Lock()
+	n := len(g.flights)
+	g.mu.Unlock()
+	if n > maxCachedFlights {
+		t.Fatalf("flights=%d, want at most %d", n, maxCachedFlights)
 	}
 }
 
