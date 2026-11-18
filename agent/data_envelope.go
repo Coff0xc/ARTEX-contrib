@@ -67,6 +67,17 @@ func frameLessonsBlock(block string) string {
 	return env.intro() + "\n\n" + env.wrap("lessons", block)
 }
 
+// frameIntentAssets wraps marshaled intent assets for the worker system prompt.
+// page_title and technologies come from the target; they are DATA, not
+// instructions. Empty input stays empty.
+func frameIntentAssets(raw []byte) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	env := newDataEnvelope()
+	return "\n\n" + env.intro() + "\n\nThe target assets corresponding to this intent's asset_ids:\n" + env.wrap("intent_assets", string(raw))
+}
+
 // overviewDerivedFields are the graph_overview keys whose content is derived
 // from agent or target text; renderOverviewSections frames each of them.
 var overviewDerivedFields = []string{"recent_facts", "finding_list", "cold_digests", "related_tasks"}

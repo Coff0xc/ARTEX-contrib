@@ -478,7 +478,7 @@ func (w *Worker) execute(ctx context.Context, name string, taskID int64, as *db.
 		if ids := intentAssetIDs(intent); len(ids) > 0 {
 			if assets, err := as.GetByIDs(ids); err == nil && len(assets) > 0 {
 				if b, err := json.Marshal(assets); err == nil {
-					sysBody += "\n\nThe target assets corresponding to this intent's asset_ids:\n" + string(b)
+					sysBody += frameIntentAssets(b)
 				}
 				// The assets this intent explicitly targets → automatically join the task's
 				// test scope (same conservative granularity as insertAssets). upsertTaskScope's
