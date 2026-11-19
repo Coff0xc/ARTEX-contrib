@@ -104,7 +104,7 @@ func Markdown(in Input) string {
 			fmt.Fprintf(&b, "%s\n\n", nz(f.Summary, ""))
 			b.WriteString(qualityBullets(f.Q, true)) // honest proof strength, including its gaps
 			if f.PoC != "" {
-				fmt.Fprintf(&b, "**PoC / Evidence:**\n\n```\n%s\n```\n\n", f.PoC)
+				fmt.Fprintf(&b, "**PoC / Evidence:**\n\n%s\n\n", mdFence(f.PoC))
 			}
 			b.WriteString(qualityNarrative(f.Q)) // why it holds / what failed, only when written
 			// The same warning, from the same helper, that the findings export prints: a

@@ -317,6 +317,23 @@ func TestFindingsExportsCarryQuality(t *testing.T) {
 	}
 }
 
+func TestMdFenceSurvivesInjectedTicks(t *testing.T) {
+	payload := "```\n# injected heading\n```"
+	f := &db.DBFinding{
+		Name: "xss", Severity: "high", Evidence: payload,
+	}
+	md := FindingsMarkdown([]*db.DBFinding{f}, time.Unix(0, 0))
+	if !strings.Contains(md, "````\n"+payload+"\n````") {
+		t.Fatalf("evidence fence did not outrun injected ticks:\n%s", md)
+	}
+	if n := strings.Count(md, "```"); n%2 != 0 {
+		t.Fatalf("unbalanced fences (%d) in\n%s", n, md)
+	}
+	if got := mdFence("plain"); got != "```\nplain\n```" {
+		t.Fatalf("plain fence = %q", got)
+	}
+}
+
 func TestFindingsCSVNeutralizesFormulas(t *testing.T) {
 	out := FindingsCSV([]*db.DBFinding{{
 		ID:              7,

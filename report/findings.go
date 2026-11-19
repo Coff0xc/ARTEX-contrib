@@ -33,6 +33,25 @@ func findingTitle(f *db.DBFinding) string {
 	return nz(f.Name, nz(f.VulnClass, "Uncategorized"))
 }
 
+// mdFence wraps body in a Markdown code fence whose tick run is longer than any
+// run inside body, so injected backticks cannot close the block.
+func mdFence(body string) string {
+	n := 3
+	run := 0
+	for i := 0; i < len(body); i++ {
+		if body[i] == '`' {
+			run++
+			if run >= n {
+				n = run + 1
+			}
+		} else {
+			run = 0
+		}
+	}
+	ticks := strings.Repeat("`", n)
+	return ticks + "\n" + body + "\n" + ticks
+}
+
 // FindingsMarkdown combines a batch of findings into a summary report (summary + grouped by severity,
 // each entry with class/status/owning task/evidence/detailed report).
 func FindingsMarkdown(fs []*db.DBFinding, generatedAt time.Time) string {
@@ -81,7 +100,7 @@ func FindingsMarkdown(fs []*db.DBFinding, generatedAt time.Time) string {
 			fmt.Fprintf(&b, "%s\n\n", s)
 		}
 		if e := strings.TrimSpace(f.Evidence); e != "" {
-			fmt.Fprintf(&b, "**Evidence:**\n\n```\n%s\n```\n\n", e)
+			fmt.Fprintf(&b, "**Evidence:**\n\n%s\n\n", mdFence(e))
 		}
 		b.WriteString(qualityNarrative(q))
 		b.WriteString(detailedReportFull(f.Report, "**Detailed report:**"))
@@ -112,7 +131,7 @@ func SingleFindingMarkdown(f *db.DBFinding, generatedAt time.Time) string {
 		fmt.Fprintf(&b, "## Summary\n\n%s\n\n", s)
 	}
 	if e := strings.TrimSpace(f.Evidence); e != "" {
-		fmt.Fprintf(&b, "## Evidence\n\n```\n%s\n```\n\n", e)
+		fmt.Fprintf(&b, "## Evidence\n\n%s\n\n", mdFence(e))
 	}
 	b.WriteString(qualityNarrative(q))
 	b.WriteString(detailedReportFull(f.Report, "## Detailed Report"))
